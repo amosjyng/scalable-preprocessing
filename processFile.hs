@@ -37,6 +37,10 @@ doc2Str d =
 						  [1..] $ docAttr d
 	in unwords $ [show . docType $ d] ++ strList
 
+invertDoc :: Document -> Document
+invertDoc d = (if docType d == 1 then 2 else 1,
+			   docQuery d, map negate $ docAttr d)
+
 subtractDoc :: Document -> Document -> Maybe Document
 subtractDoc relevant irrelevant
 	| docQuery relevant == docQuery irrelevant =
@@ -45,7 +49,8 @@ subtractDoc relevant irrelevant
 
 subtractDocs :: [Document] -> Document -> [Document]
 subtractDocs relevants irrelevant =
-	[fromJust doc | doc <- subtractedDocs, isJust doc]
+	concat [[d, invertDoc d] | doc <- subtractedDocs, isJust doc,
+							   let d = fromJust doc]
 	where subtractedDocs = map (`subtractDoc` irrelevant) relevants
 
 subtractAll :: [Document] -> [Document] -> [Document]
