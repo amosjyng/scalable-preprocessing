@@ -44,23 +44,26 @@ doc2Str d =
 subtractDoc :: Document -> Document -> Maybe Document
 subtractDoc relevant irrelevant
 	| docQuery relevant == docQuery irrelevant =
-		Just (1, -1, Map.unionWith (-) (docAttr relevant) (docAttr irrelevant))
+		Just (1, -1, Map.unionWith (+) (docAttr relevant) (docAttr irrelevant))
 	| otherwise = Nothing
 
 subtractDocs :: [Document] -> Document -> [Document]
 subtractDocs relevants irrelevant =
-	let subtractionResults = map (\d -> subtractDoc d irrelevant) relevants
+	let subtractionResults = map (`subtractDoc` irrelevant) relevants
 	in [fromJust r | r <- subtractionResults, isJust r]
 
 subtractAll :: [Document] -> [Document] -> [Document]
 subtractAll relevant irrelevant =
 	concat $ map (subtractDocs relevant) irrelevant
 
+invertWeights :: Document -> Document
+invertWeights d = (docType d, docQuery d, Map.map negate $ docAttr d)
+
 process :: [Document] -> String
 process x =
 	let
 		relevantDocs   = [doc | doc <- x, docType doc == 1]
-		irrelevantDocs = [doc | doc <- x, docType doc == 0]
+		irrelevantDocs = [invertWeights doc | doc <- x, docType doc == 0]
 	in unlines . map doc2Str $ subtractAll relevantDocs irrelevantDocs
 
 -- Execute main program
