@@ -41,14 +41,10 @@ doc2Str d =
 		strList  = map (\t -> fst t ++ ":" ++ (show . snd) t) attrList
 	in unwords $ [show . docType $ d] ++ strList
 
-subMaybe :: Num a => a -> a -> Maybe a
-subMaybe x y = Just $ x - y
-
 subtractDoc :: Document -> Document -> Maybe Document
 subtractDoc relevant irrelevant
 	| docQuery relevant == docQuery irrelevant =
-		Just (1, -1, Map.differenceWith subMaybe
-						(docAttr relevant) (docAttr irrelevant))
+		Just (1, -1, Map.unionWith (-) (docAttr relevant) (docAttr irrelevant))
 	| otherwise = Nothing
 
 subtractDocs :: [Document] -> Document -> [Document]
