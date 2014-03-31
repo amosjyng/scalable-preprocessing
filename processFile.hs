@@ -3,10 +3,9 @@ import System.Environment
 import Data.List
 import Data.List.Split
 import Data.Maybe
-import qualified Data.Map as Map
 
 -- Define data structure and accessors
-type Document = (Int,Int,Map.Map String Double)
+type Document = (Int,Int,[Double])
 
 docType :: Document -> Int
 docType (x, _, _) = x
@@ -14,18 +13,16 @@ docType (x, _, _) = x
 docQuery :: Document -> Int
 docQuery (_, x, _) = x
 
-docAttr :: Document -> Map.Map String Double
+docAttr :: Document -> [Double]
 docAttr (_, _, x) = x
 
 -- Read in data
 parseLine :: String -> Document
 parseLine l =
 	let
-		ws       = init . init . init $ words l
-		strAttrs = map (\s -> splitOn ":" s) $ tail ws
-		attrs    = map (\l -> (head l, read $ last l :: Double)) strAttrs
-	in (read $ head ws, round . snd . head $ attrs,
-		Map.fromList . tail $ attrs)
+		ws    = init . init . init $ words l
+		attrs = map (\s -> read . last . splitOn ":" $ s) $ tail ws
+	in (read $ head ws, round . head $ attrs, tail $ attrs)
 
 parse :: String -> [Document]
 parse s = map parseLine $ lines s
@@ -36,34 +33,30 @@ processDoc l = l
 
 doc2Str :: Document -> String
 doc2Str d =
-	let
-		attrList = Map.toList . docAttr $ d
-		strList  = map (\t -> fst t ++ ":" ++ (show . snd) t) attrList
+	let strList = zipWith (\a b -> (show a) ++ ":" ++ (show b))
+						  [1..] $ docAttr d
 	in unwords $ [show . docType $ d] ++ strList
 
 subtractDoc :: Document -> Document -> Maybe Document
 subtractDoc relevant irrelevant
 	| docQuery relevant == docQuery irrelevant =
-		Just (1, -1, Map.unionWith (+) (docAttr relevant) (docAttr irrelevant))
+		Just (1, -1, zipWith (-) (docAttr relevant) (docAttr irrelevant))
 	| otherwise = Nothing
 
 subtractDocs :: [Document] -> Document -> [Document]
 subtractDocs relevants irrelevant =
-	let subtractionResults = map (`subtractDoc` irrelevant) relevants
-	in [fromJust r | r <- subtractionResults, isJust r]
+	[fromJust doc | doc <- subtractedDocs, isJust doc]
+	where subtractedDocs = map (`subtractDoc` irrelevant) relevants
 
 subtractAll :: [Document] -> [Document] -> [Document]
-subtractAll relevant irrelevant =
-	concat $ map (subtractDocs relevant) irrelevant
-
-invertWeights :: Document -> Document
-invertWeights d = (docType d, docQuery d, Map.map negate $ docAttr d)
+subtractAll relevants irrelevants =
+	concat . map (subtractDocs relevants) $ irrelevants
 
 process :: [Document] -> String
 process x =
 	let
 		relevantDocs   = [doc | doc <- x, docType doc == 1]
-		irrelevantDocs = [invertWeights doc | doc <- x, docType doc == 0]
+		irrelevantDocs = [doc | doc <- x, docType doc == 0]
 	in unlines . map doc2Str $ subtractAll relevantDocs irrelevantDocs
 
 -- Execute main program
