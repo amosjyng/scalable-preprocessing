@@ -41,6 +41,11 @@ invertDoc :: Document -> Document
 invertDoc d = (if docType d == 1 then 2 else 1,
 			   docQuery d, map negate $ docAttr d)
 
+normalize :: Document -> Document
+normalize d =
+	(docType d, docQuery d, map (/ l2) $ docAttr d)
+	where l2 = sqrt . sum . map (^2) $ docAttr d
+
 subtractDoc :: Document -> Document -> Maybe Document
 subtractDoc relevant irrelevant
 	| docQuery relevant == docQuery irrelevant =
@@ -62,7 +67,8 @@ process x =
 	let
 		relevantDocs   = [doc | doc <- x, docType doc == 1]
 		irrelevantDocs = [doc | doc <- x, docType doc == 0]
-	in unlines . map doc2Str $ subtractAll relevantDocs irrelevantDocs
+	in unlines . map (doc2Str . normalize) $
+		subtractAll relevantDocs irrelevantDocs
 
 -- Execute main program
 main = do
