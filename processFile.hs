@@ -42,28 +42,8 @@ normalize d =
 	(docType d, docQuery d, map (/ l2) $ docAttr d)
 	where l2 = sqrt . sum . map (^2) $ docAttr d
 
-subtractDoc :: Document -> Document -> Maybe Document
-subtractDoc relevant irrelevant
-	| docQuery relevant == docQuery irrelevant =
-		Just (1, -1, zipWith (-) (docAttr relevant) (docAttr irrelevant))
-	| otherwise = Nothing
-
-subtractDocs :: [Document] -> Document -> [Document]
-subtractDocs relevants irrelevant =
-	[fromJust doc | doc <- subtractedDocs, isJust doc]
-	where subtractedDocs = map (`subtractDoc` irrelevant) relevants
-
-subtractAll :: [Document] -> [Document] -> [Document]
-subtractAll relevants irrelevants =
-	concat . map (subtractDocs relevants) $ irrelevants
-
 process :: [Document] -> String
-process x =
-	let
-		relevantDocs   = [doc | doc <- x, docType doc == 1]
-		irrelevantDocs = [doc | doc <- x, docType doc == 0]
-	in unlines . map (doc2Str . normalize) $
-		subtractAll relevantDocs irrelevantDocs
+process x = unlines . map (doc2Str . normalize) $ x
 
 -- Execute main program
 main = do
