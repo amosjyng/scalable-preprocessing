@@ -2,6 +2,7 @@ import System.IO
 import System.Environment
 import Data.List
 import Data.List.Split
+import Data.Maybe
 import qualified Data.Map as Map
 
 -- Define data structure and accessors
@@ -40,8 +41,24 @@ doc2Str d =
 		strList  = map (\t -> fst t ++ ":" ++ (show . snd) t) attrList
 	in unwords $ [show . docType $ d] ++ strList
 
+subMaybe :: Num a => a -> a -> Maybe a
+subMaybe x y = Just $ x - y
+
+subtractDoc :: Document -> Document -> Maybe Document
+subtractDoc relevant irrelevant
+	| docQuery relevant == docQuery irrelevant =
+		Just (1, -1, Map.differenceWith subMaybe
+						(docAttr relevant) (docAttr irrelevant))
+	| otherwise = Nothing
+
+subtractDocs :: [Document] -> Document -> [Document]
+subtractDocs relevants irrelevant =
+	let subtractionResults = map (\d -> subtractDoc d irrelevant) relevants
+	in [fromJust r | r <- subtractionResults, isJust r]
+
 subtractAll :: [Document] -> [Document] -> [Document]
-subtractAll relevant irrelevant = concat [relevant, irrelevant]
+subtractAll relevant irrelevant =
+	concat $ map (subtractDocs relevant) irrelevant
 
 process :: [Document] -> String
 process x =
