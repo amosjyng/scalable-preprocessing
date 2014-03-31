@@ -40,8 +40,15 @@ doc2Str d =
 		strList  = map (\t -> fst t ++ ":" ++ (show . snd) t) attrList
 	in unwords $ [show . docType $ d] ++ strList
 
+subtractAll :: [Document] -> [Document] -> [Document]
+subtractAll relevant irrelevant = concat [relevant, irrelevant]
+
 process :: [Document] -> String
-process x = unlines $ map (doc2Str . processDoc) x
+process x =
+	let
+		relevantDocs   = [doc | doc <- x, docType doc == 1]
+		irrelevantDocs = [doc | doc <- x, docType doc == 0]
+	in unlines . map doc2Str $ subtractAll relevantDocs irrelevantDocs
 
 -- Execute main program
 main = do
