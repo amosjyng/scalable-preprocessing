@@ -62,12 +62,16 @@ subtractAll :: [Document] -> [Document] -> [Document]
 subtractAll relevants irrelevants =
 	concat . map (subtractDocs relevants) $ irrelevants
 
+addFeature :: Document -> Document
+addFeature d = (docType d, docQuery d, attrs ++ [(attrs !! 0) * (attrs !! 13)])
+	where attrs = docAttr d
+
 process :: [Document] -> String
 process x =
 	let
 		relevantDocs   = [doc | doc <- x, docType doc == 1]
 		irrelevantDocs = [doc | doc <- x, docType doc == 0]
-	in unlines . map (doc2Str . normalize) $
+	in unlines . map (doc2Str . normalize . addFeature) $
 		subtractAll relevantDocs irrelevantDocs
 
 -- Execute main program
