@@ -58,7 +58,7 @@ subtractAll relevants irrelevants =
 	concat . map (subtractDocs relevants) $ irrelevants
 
 addFeature :: Document -> Document
-addFeature d = (docType d, docQuery d, attrs ++ [(attrs !! 15) * (attrs !! 23)]
+addFeature d = (docType d, docQuery d, attrs ++ [(attrs !! 0) * (attrs !! 13)]
     where attrs = docAttr d
 
 process :: [Document] -> String
